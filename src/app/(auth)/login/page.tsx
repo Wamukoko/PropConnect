@@ -1,14 +1,41 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+"use client";
 
-export default async function LoginPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-  if (user) {
-    redirect("/");
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Login failed");
+        return;
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -26,7 +53,7 @@ export default async function LoginPage() {
           </p>
         </div>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="email"
@@ -39,6 +66,8 @@ export default async function LoginPage() {
               name="email"
               type="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               placeholder="agent@example.com"
             />
@@ -56,19 +85,26 @@ export default async function LoginPage() {
               name="password"
               type="password"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               placeholder="Enter your password"
             />
           </div>
 
+          {error && (
+            <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>
+          )}
+
           <button
             type="submit"
-            className="w-full py-2 px-4 rounded-md text-white font-medium transition-colors"
+            disabled={loading}
+            className="w-full py-2 px-4 rounded-md text-white font-medium transition-colors disabled:opacity-50"
             style={{
               backgroundColor: "var(--color-secondary)",
             }}
           >
-            Sign In
+            {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 

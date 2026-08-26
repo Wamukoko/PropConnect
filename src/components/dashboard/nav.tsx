@@ -1,10 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
-export function DashboardNav({ user }: { user: User }) {
+export function DashboardNav({ user }: { user: { email?: string } }) {
+  const router = useRouter();
+
+  async function handleSignOut() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <nav
       className="h-16 border-b flex items-center justify-between px-6"
@@ -21,14 +28,12 @@ export function DashboardNav({ user }: { user: User }) {
         <span className="text-white text-sm">
           {user.email}
         </span>
-        <form action="/auth/signout" method="post">
-          <button
-            type="submit"
-            className="text-sm px-3 py-1 rounded border border-white/30 text-white hover:bg-white/10 transition-colors"
-          >
-            Sign Out
-          </button>
-        </form>
+        <button
+          onClick={handleSignOut}
+          className="text-sm px-3 py-1 rounded border border-white/30 text-white hover:bg-white/10 transition-colors"
+        >
+          Sign Out
+        </button>
       </div>
     </nav>
   );
