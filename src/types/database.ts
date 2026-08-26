@@ -203,6 +203,157 @@ export interface Database {
           updated_at?: string;
         };
       };
+      properties: {
+        Row: {
+          id: string;
+          account_id: string;
+          title: string;
+          reference_code: string | null;
+          description: string | null;
+          property_type: string;
+          listing_type: string;
+          status: string;
+          price: number;
+          currency: string;
+          bedrooms: number | null;
+          bathrooms: number | null;
+          floor_area: number | null;
+          land_area: number | null;
+          furnished: boolean | null;
+          parking_spaces: number | null;
+          amenities: Json;
+          location_id: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          public_location_text: string | null;
+          availability_date: string | null;
+          published_at: string | null;
+          archived_at: string | null;
+          created_by: string | null;
+          updated_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          title: string;
+          reference_code?: string | null;
+          description?: string | null;
+          property_type: string;
+          listing_type: string;
+          status?: string;
+          price: number;
+          currency?: string;
+          bedrooms?: number | null;
+          bathrooms?: number | null;
+          floor_area?: number | null;
+          land_area?: number | null;
+          furnished?: boolean | null;
+          parking_spaces?: number | null;
+          amenities?: Json;
+          location_id?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          public_location_text?: string | null;
+          availability_date?: string | null;
+          published_at?: string | null;
+          archived_at?: string | null;
+          created_by?: string | null;
+          updated_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          reference_code?: string | null;
+          description?: string | null;
+          property_type?: string;
+          listing_type?: string;
+          status?: string;
+          price?: number;
+          currency?: string;
+          bedrooms?: number | null;
+          bathrooms?: number | null;
+          floor_area?: number | null;
+          land_area?: number | null;
+          furnished?: boolean | null;
+          parking_spaces?: number | null;
+          amenities?: Json;
+          location_id?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          public_location_text?: string | null;
+          availability_date?: string | null;
+          published_at?: string | null;
+          archived_at?: string | null;
+          updated_by?: string | null;
+          updated_at?: string;
+        };
+      };
+      property_photos: {
+        Row: {
+          id: string;
+          account_id: string;
+          property_id: string;
+          storage_path: string;
+          thumbnail_path: string | null;
+          alt_text: string | null;
+          sort_order: number;
+          deleted_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          property_id: string;
+          storage_path: string;
+          thumbnail_path?: string | null;
+          alt_text?: string | null;
+          sort_order?: number;
+          deleted_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          storage_path?: string;
+          thumbnail_path?: string | null;
+          alt_text?: string | null;
+          sort_order?: number;
+          deleted_at?: string | null;
+        };
+      };
+      locations: {
+        Row: {
+          id: string;
+          account_id: string;
+          name: string;
+          slug: string;
+          location_type: string;
+          parent_id: string | null;
+          latitude: number | null;
+          longitude: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          name: string;
+          slug: string;
+          location_type: string;
+          parent_id?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          name?: string;
+          slug?: string;
+          location_type?: string;
+          parent_id?: string | null;
+          latitude?: number | null;
+          longitude?: number | null;
+        };
+      };
     };
     Enums: {
       property_type:
