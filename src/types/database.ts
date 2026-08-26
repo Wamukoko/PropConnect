@@ -773,6 +773,95 @@ export interface Database {
           updated_at?: string;
         };
       };
+      viewings: {
+        Row: {
+          id: string;
+          account_id: string;
+          property_id: string;
+          lead_id: string;
+          agent_id: string | null;
+          start_at: string;
+          end_at: string;
+          status: string;
+          cancelled_reason: string | null;
+          rescheduled_from: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          property_id: string;
+          lead_id: string;
+          agent_id?: string | null;
+          start_at: string;
+          end_at: string;
+          status?: string;
+          cancelled_reason?: string | null;
+          rescheduled_from?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: string;
+          cancelled_reason?: string | null;
+          agent_id?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+      };
+      working_hours: {
+        Row: {
+          id: string;
+          account_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          slot_duration_minutes: number;
+          buffer_minutes: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          day_of_week: number;
+          start_time: string;
+          end_time: string;
+          slot_duration_minutes?: number;
+          buffer_minutes?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          start_time?: string;
+          end_time?: string;
+          slot_duration_minutes?: number;
+          buffer_minutes?: number;
+          updated_at?: string;
+        };
+      };
+      blackout_dates: {
+        Row: {
+          id: string;
+          account_id: string;
+          date: string;
+          reason: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          date: string;
+          reason?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          reason?: string | null;
+        };
+      };
     };
     Enums: {
       property_type:
