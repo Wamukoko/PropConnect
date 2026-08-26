@@ -354,6 +354,162 @@ export interface Database {
           longitude?: number | null;
         };
       };
+      webhook_events: {
+        Row: {
+          id: string;
+          account_id: string | null;
+          whatsapp_account_id: string | null;
+          provider_event_id: string | null;
+          processing_state: string;
+          attempts: number;
+          last_error: string | null;
+          processed_at: string | null;
+          received_at: string;
+          raw_payload: Json | null;
+        };
+        Insert: {
+          id?: string;
+          account_id?: string | null;
+          whatsapp_account_id?: string | null;
+          provider_event_id?: string | null;
+          processing_state?: string;
+          attempts?: number;
+          last_error?: string | null;
+          processed_at?: string | null;
+          received_at?: string;
+          raw_payload?: Json | null;
+        };
+        Update: {
+          processing_state?: string;
+          attempts?: number;
+          last_error?: string | null;
+          processed_at?: string | null;
+          raw_payload?: Json | null;
+        };
+      };
+      messages: {
+        Row: {
+          id: string;
+          account_id: string;
+          lead_id: string | null;
+          whatsapp_account_id: string | null;
+          direction: string;
+          type: string;
+          content: Json;
+          wa_message_id: string | null;
+          provider_timestamp: string | null;
+          correlation_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          lead_id?: string | null;
+          whatsapp_account_id?: string | null;
+          direction: string;
+          type: string;
+          content: Json;
+          wa_message_id?: string | null;
+          provider_timestamp?: string | null;
+          correlation_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          content?: Json;
+          correlation_id?: string | null;
+        };
+      };
+      outbound_messages: {
+        Row: {
+          id: string;
+          account_id: string;
+          lead_id: string;
+          message_id: string | null;
+          provider_message_id: string | null;
+          template_name: string | null;
+          template_version: string | null;
+          status: string;
+          error_code: string | null;
+          attempt_count: number;
+          next_attempt_at: string | null;
+          sent_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          lead_id: string;
+          message_id?: string | null;
+          provider_message_id?: string | null;
+          template_name?: string | null;
+          template_version?: string | null;
+          status?: string;
+          error_code?: string | null;
+          attempt_count?: number;
+          next_attempt_at?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: string;
+          error_code?: string | null;
+          attempt_count?: number;
+          next_attempt_at?: string | null;
+          sent_at?: string | null;
+        };
+      };
+      outbound_jobs: {
+        Row: {
+          id: string;
+          account_id: string;
+          lead_id: string;
+          whatsapp_account_id: string | null;
+          job_type: string;
+          template_name: string | null;
+          language: string | null;
+          payload: Json | null;
+          idempotency_key: string;
+          status: string;
+          attempts: number;
+          next_attempt_at: string;
+          locked_at: string | null;
+          locked_by: string | null;
+          provider_message_id: string | null;
+          last_error: string | null;
+          created_at: string;
+          sent_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          lead_id: string;
+          whatsapp_account_id?: string | null;
+          job_type: string;
+          template_name?: string | null;
+          language?: string | null;
+          payload?: Json | null;
+          idempotency_key: string;
+          status?: string;
+          attempts?: number;
+          next_attempt_at?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          provider_message_id?: string | null;
+          last_error?: string | null;
+          created_at?: string;
+          sent_at?: string | null;
+        };
+        Update: {
+          status?: string;
+          attempts?: number;
+          next_attempt_at?: string;
+          locked_at?: string | null;
+          locked_by?: string | null;
+          provider_message_id?: string | null;
+          last_error?: string | null;
+          sent_at?: string | null;
+        };
+      };
     };
     Enums: {
       property_type:
