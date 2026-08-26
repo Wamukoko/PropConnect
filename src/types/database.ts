@@ -720,6 +720,59 @@ export interface Database {
           dedup_key?: string | null;
         };
       };
+      consent_records: {
+        Row: {
+          id: string;
+          account_id: string;
+          lead_id: string;
+          purpose: string;
+          granted: boolean;
+          granted_at: string | null;
+          revoked_at: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          lead_id: string;
+          purpose: string;
+          granted: boolean;
+          granted_at?: string | null;
+          revoked_at?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          granted?: boolean;
+          granted_at?: string | null;
+          revoked_at?: string | null;
+        };
+      };
+      system_settings: {
+        Row: {
+          id: string;
+          account_id: string;
+          setting_key: string;
+          setting_value: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          setting_key: string;
+          setting_value?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          setting_value?: Json;
+          updated_at?: string;
+        };
+      };
     };
     Enums: {
       property_type:
