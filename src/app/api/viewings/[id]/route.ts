@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createTaskWithTimeline, hasActiveTaskType } from "@/lib/analytics/tasks";
 
 export async function GET(
   request: Request,
@@ -64,7 +65,7 @@ export async function PATCH(
   // Get current viewing
   const { data: current } = await supabase
     .from("viewings")
-    .select("status, lead_id, property_id")
+    .select("status, lead_id, property_id, start_at")
     .eq("id", id)
     .eq("account_id", agent.account_id)
     .single();
@@ -115,6 +116,34 @@ export async function PATCH(
         reason: body.cancelled_reason,
       },
     });
+
+    // Follow-up task after a completed viewing
+    if (body.status === "completed" && current.lead_id) {
+      const hasFollowUp = await hasActiveTaskType(
+        {
+          accountId: agent.account_id,
+          leadId: current.lead_id,
+          type: "post_viewing_follow_up",
+        },
+        supabase
+      );
+      if (!hasFollowUp) {
+        await createTaskWithTimeline(
+          {
+            accountId: agent.account_id,
+            leadId: current.lead_id,
+            agentId: user.id,
+            actorAgentId: user.id,
+            type: "post_viewing_follow_up",
+            title: "Post-viewing follow-up",
+            description: `The viewing has been completed — follow up with the customer to gauge interest and next steps.`,
+            priority: "medium",
+            dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          },
+          supabase
+        );
+      }
+    }
 
     return NextResponse.json({ status: body.status });
   }

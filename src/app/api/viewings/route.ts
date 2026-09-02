@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { viewingFilterSchema } from "@/lib/validators/viewing";
+import { resolvePropertyPhotoUrls } from "@/lib/properties";
+import { createTaskWithTimeline, hasActiveTaskType } from "@/lib/analytics/tasks";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -29,7 +31,10 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("viewings")
-    .select("*, properties(title, address:location_id), leads(name, phone)", { count: "exact" })
+    .select(
+      "*, properties(title, address:location_id, public_location_text, price, property_type, listing_type, property_photos(storage_path, thumbnail_path)), leads(name, phone)",
+      { count: "exact" }
+    )
     .eq("account_id", agent.account_id);
 
   if (filters.status) {
@@ -59,12 +64,57 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  if (data) {
+    for (const viewing of data) {
+      const photos = viewing.properties?.property_photos;
+      if (photos?.length) {
+        const enriched = await Promise.all(
+          photos.map(async (p: any) => {
+            const urls = await resolvePropertyPhotoUrls(supabase, p);
+            return { ...p, ...urls };
+          })
+        );
+        viewing.properties = { ...viewing.properties, property_photos: enriched };
+      }
+    }
+  }
+
+  const today = new Date();
+  const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const dayEnd = new Date(dayStart.getTime() + 86400000);
+
+  const [todayRes, upcomingRes, requestedRes, confirmedRes, completedRes, cancelledRes] =
+    await Promise.all([
+      supabase.from("viewings").select("id", { count: "exact", head: true })
+        .eq("account_id", agent.account_id).gte("start_at", dayStart.toISOString()).lt("start_at", dayEnd.toISOString()),
+      supabase.from("viewings").select("id", { count: "exact", head: true })
+        .eq("account_id", agent.account_id).gte("start_at", today.toISOString()),
+      supabase.from("viewings").select("id", { count: "exact", head: true })
+        .eq("account_id", agent.account_id).eq("status", "requested"),
+      supabase.from("viewings").select("id", { count: "exact", head: true })
+        .eq("account_id", agent.account_id).eq("status", "confirmed"),
+      supabase.from("viewings").select("id", { count: "exact", head: true })
+        .eq("account_id", agent.account_id).eq("status", "completed"),
+      supabase.from("viewings").select("id", { count: "exact", head: true })
+        .eq("account_id", agent.account_id).eq("status", "cancelled"),
+    ]);
+
+  const stats = {
+    today: todayRes.count ?? 0,
+    upcoming: upcomingRes.count ?? 0,
+    requested: requestedRes.count ?? 0,
+    confirmed: confirmedRes.count ?? 0,
+    completed: completedRes.count ?? 0,
+    cancelled: cancelledRes.count ?? 0,
+  };
+
   return NextResponse.json({
     viewings: data,
     total: count,
     page: filters.page,
     limit: filters.limit,
     totalPages: count ? Math.ceil(count / filters.limit) : 0,
+    stats,
   });
 }
 
@@ -146,6 +196,34 @@ export async function POST(request: Request) {
       end_at: endAt.toISOString(),
     },
   });
+
+  // Follow-up task: agent must confirm the requested viewing
+  if (body.lead_id) {
+    const hasConfirm = await hasActiveTaskType(
+      {
+        accountId: agent.account_id,
+        leadId: body.lead_id,
+        type: "confirm_viewing",
+      },
+      supabase
+    );
+    if (!hasConfirm) {
+      await createTaskWithTimeline(
+        {
+          accountId: agent.account_id,
+          leadId: body.lead_id,
+          agentId: body.agent_id || user.id,
+          actorAgentId: user.id,
+          type: "confirm_viewing",
+          title: "Confirm viewing request",
+          description: `A viewing has been requested and needs confirmation before the slot.`,
+          priority: "medium",
+          dueAt: startAt.toISOString(),
+        },
+        supabase
+      );
+    }
+  }
 
   return NextResponse.json({ viewing: data }, { status: 201 });
 }

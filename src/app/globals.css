@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --color-primary: #182744;
   --color-secondary: #B49362;
@@ -7,16 +9,19 @@
   --color-primary-rgb: 24, 39, 68;
   --color-secondary-rgb: 180, 147, 98;
   --color-accent-rgb: 180, 147, 98;
+  --color-navy: #182744;
   --color-navy-deep: #101B30;
   --color-navy-light: #24365C;
   --color-gold-muted: #8C7550;
   --color-off-white: #F7F5F1;
+  color-scheme: light;
 }
 
 @theme {
   --color-primary: var(--color-primary);
   --color-secondary: var(--color-secondary);
   --color-accent: var(--color-accent);
+  --color-navy: var(--color-navy);
   --color-navy-deep: var(--color-navy-deep);
   --color-navy-light: var(--color-navy-light);
   --color-gold-muted: var(--color-gold-muted);
@@ -27,4 +32,209 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
   background-color: var(--color-off-white);
   color: #1a1a1a;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-primary: #B6C2DE;
+  --color-primary-rgb: 182, 194, 222;
+  --color-gold-muted: #C0AD82;
+  --color-off-white: #0D1320;
+}
+
+/* Dark-mode re-theming of hardcoded light surfaces via un-layered overrides
+   (pattern: default canvas overrides + a higher-specificity :hover pair so
+   hover variants still win while hovered). */
+.dark body {
+  color: #C7D0E0;
+}
+
+.dark .bg-white {
+  background-color: #161D2E;
+}
+.dark .bg-gray-50 {
+  background-color: #1B2437;
+}
+.dark .bg-gray-100 {
+  background-color: #232D42;
+}
+.dark .bg-gray-200 {
+  background-color: #2A3550;
+}
+.dark .bg-gray-800 {
+  background-color: #101829;
+}
+.dark .bg-gray-900 {
+  background-color: #0A101D;
+}
+
+.dark .hover\:bg-gray-50:hover {
+  background-color: #1F2A3F;
+}
+.dark .hover\:bg-gray-100:hover {
+  background-color: #273145;
+}
+.dark .hover\:bg-gray-200:hover {
+  background-color: #2F3A56;
+}
+.dark .hover\:bg-gray-300:hover {
+  background-color: #37425F;
+}
+
+.dark .border-gray-100 {
+  border-color: #2A3448;
+}
+.dark .border-gray-200 {
+  border-color: #303A50;
+}
+.dark .border-gray-300 {
+  border-color: #3E4A64;
+}
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2A3448;
+}
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #303A50;
+}
+
+.dark .text-gray-400 {
+  color: #8A94AC;
+}
+.dark .text-gray-500 {
+  color: #9BA5BD;
+}
+.dark .text-gray-600 {
+  color: #AFB9CF;
+}
+.dark .text-gray-700 {
+  color: #C6CFE2;
+}
+.dark .text-gray-800 {
+  color: #D9E0EE;
+}
+.dark .text-gray-900 {
+  color: #ECF0F8;
+}
+
+.dark .hover\:text-gray-600:hover {
+  color: #C6CFE2;
+}
+.dark .hover\:text-gray-700:hover {
+  color: #D9E0EE;
+}
+.dark .hover\:text-gray-900:hover {
+  color: #FFFFFF;
+}
+.dark .hover\:text-red-600:hover {
+  color: #F28B96;
+}
+
+/* Status pill tints */
+.dark .bg-amber-50 {
+  background-color: #2B2010;
+}
+.dark .bg-amber-100 {
+  background-color: #382A12;
+}
+.dark .text-amber-700 {
+  color: #E8B45C;
+}
+.dark .text-amber-800 {
+  color: #F0C878;
+}
+.dark .border-amber-200 {
+  border-color: #4A3A1A;
+}
+
+.dark .bg-emerald-50 {
+  background-color: #0E2B23;
+}
+.dark .text-emerald-700 {
+  color: #5FD4A8;
+}
+.dark .border-emerald-200 {
+  border-color: #1E4A3B;
+}
+
+.dark .bg-sky-50 {
+  background-color: #0E2434;
+}
+.dark .text-sky-700 {
+  color: #6CC6F2;
+}
+.dark .border-sky-200 {
+  border-color: #1E4258;
+}
+
+.dark .bg-blue-100 {
+  background-color: #122640;
+}
+.dark .text-blue-700 {
+  color: #7CB8F5;
+}
+.dark .text-blue-800 {
+  color: #93C7F7;
+}
+
+.dark .bg-green-100 {
+  background-color: #0E2F22;
+}
+.dark .text-green-700 {
+  color: #5ED6A0;
+}
+.dark .text-green-800 {
+  color: #7EE0B5;
+}
+
+.dark .bg-orange-50 {
+  background-color: #2E1F10;
+}
+.dark .bg-orange-100 {
+  background-color: #3A2813;
+}
+.dark .text-orange-700 {
+  color: #F0A86F;
+}
+.dark .text-orange-800 {
+  color: #F5BD8F;
+}
+
+.dark .bg-red-50 {
+  background-color: #33151A;
+}
+.dark .bg-red-100 {
+  background-color: #401C23;
+}
+.dark .text-red-600 {
+  color: #F28B96;
+}
+.dark .text-red-700 {
+  color: #F5A0A8;
+}
+.dark .text-red-800 {
+  color: #F8B3BA;
+}
+.dark .border-red-200 {
+  border-color: #4A2027;
+}
+.dark .border-red-300 {
+  border-color: #5D2A33;
+}
+
+.dark .bg-purple-100 {
+  background-color: #251A3A;
+}
+.dark .text-purple-700 {
+  color: #BD9DF0;
+}
+
+.dark .bg-yellow-100 {
+  background-color: #352F0D;
+}
+.dark .text-yellow-800 {
+  color: #ECD36A;
+}
+
+.dark .hover\:bg-red-50:hover {
+  background-color: #3A1A20;
 }

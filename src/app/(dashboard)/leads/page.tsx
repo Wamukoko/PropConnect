@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import { ScoreDonut } from "@/components/score-donut";
 
 interface Lead {
   id: string;
@@ -43,6 +44,28 @@ const STAGE_LABELS: Record<string, string> = {
   dormant: "Dormant",
 };
 
+const SOURCE_OPTIONS = [
+  { value: "manual", label: "Manual Entry" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "website", label: "Website" },
+  { value: "referral", label: "Referral" },
+  { value: "social", label: "Social Media" },
+  { value: "instagram", label: "Instagram" },
+  { value: "facebook", label: "Facebook" },
+  { value: "tiktok", label: "TikTok" },
+  { value: "google_ads", label: "Google Ads" },
+  { value: "facebook_ads", label: "Facebook Ads" },
+  { value: "email", label: "Email" },
+  { value: "sms", label: "SMS" },
+  { value: "walk_in", label: "Walk-in" },
+  { value: "phone_call", label: "Phone Call" },
+  { value: "partner", label: "Partner / Broker" },
+  { value: "listing_portal", label: "Listing Portal" },
+  { value: "event", label: "Event / Showroom" },
+  { value: "newsletter", label: "Newsletter" },
+  { value: "other", label: "Other" },
+];
+
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
@@ -50,6 +73,36 @@ export default function LeadsPage() {
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", source: "manual" });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const addLead = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || "Failed to create lead");
+      }
+      setShowAdd(false);
+      setForm({ name: "", phone: "", email: "", source: "manual" });
+      setSearch("");
+      setStageFilter("");
+      setPage(1);
+      fetchLeads();
+    } catch (e: any) {
+      setError(e.message || "Failed to create lead");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -82,7 +135,22 @@ export default function LeadsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Leads</h1>
-        <span className="text-sm text-gray-500">{total} total</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{total} total</span>
+          <a
+            href="/api/leads/export"
+            download
+            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+          >
+            Export CSV
+          </a>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="rounded-lg bg-[var(--color-navy)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            Add Lead
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-3">
@@ -141,16 +209,8 @@ export default function LeadsPage() {
                       {STAGE_LABELS[lead.stage] || lead.stage}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-16 rounded-full bg-gray-200">
-                        <div
-                          className="h-2 rounded-full bg-[var(--color-primary)]"
-                          style={{ width: `${lead.lead_score}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500">{lead.lead_score}</span>
-                    </div>
+                  <td className="px-4 py-3">
+                    <ScoreDonut score={lead.lead_score} />
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">{lead.source || "-"}</td>
                   <td className="px-4 py-3 text-sm text-gray-500">
@@ -180,6 +240,71 @@ export default function LeadsPage() {
           >
             Next
           </button>
+        </div>
+      )}
+
+      {showAdd && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="mb-4 text-lg font-bold">Add Lead</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">Name</label>
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g. Jane Wanjiru"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">Phone *</label>
+                <input
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="+2547XXXXXXXX"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">Email</label>
+                <input
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  placeholder="jane@example.com"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-gray-600">Source</label>
+                <select
+                  value={form.source}
+                  onChange={(e) => setForm({ ...form, source: e.target.value })}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[var(--color-primary)] focus:outline-none"
+                >
+                  {SOURCE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => setShowAdd(false)}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addLead}
+                disabled={saving || !form.phone.trim()}
+                className="rounded-lg bg-[var(--color-navy)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {saving ? "Saving..." : "Create Lead"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
+import { generateListingSlug } from "@/lib/public/slug";
 import { updatePropertySchema } from "@/lib/validators/property";
+import { enrichPhotosWithSignedUrls } from "@/lib/properties";
 
 export async function GET(
   request: Request,
@@ -31,14 +34,22 @@ export async function GET(
       `
     )
     .eq("id", id)
-    .is("property_photos.deleted_at", null)
     .single();
 
   if (error || !property) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(property);
+  const cleaned = {
+    ...property,
+    property_photos: (property.property_photos || []).filter(
+      (photo: any) => photo.deleted_at == null
+    ),
+  };
+
+  const [enriched] = await enrichPhotosWithSignedUrls([cleaned], supabase);
+
+  return NextResponse.json(enriched);
 }
 
 export async function PATCH(
@@ -82,6 +93,8 @@ export async function PATCH(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidatePublicListingCache(property);
+
   return NextResponse.json(property);
 }
 
@@ -109,5 +122,15 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  revalidatePath("/listings");
+
   return NextResponse.json({ success: true });
+}
+
+function revalidatePublicListingCache(property: { title?: string; id?: string }) {
+  if (process.env.FEATURE_PUBLIC_LISTINGS === "false") return;
+  revalidatePath("/listings");
+  if (property?.title) {
+    revalidatePath(`/listings/${generateListingSlug(property.title)}`);
+  }
 }

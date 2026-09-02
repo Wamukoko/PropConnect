@@ -10,6 +10,9 @@ interface MatchCriteria {
   bathrooms?: number;
   amenities?: string[];
   location_id?: string;
+  // Advanced location matching: one or more location IDs whose alias/resolved
+  // hierarchy matches the preferred area. Used to broaden area matching.
+  location_ids?: string[];
 }
 
 interface PropertyCandidate {
@@ -67,6 +70,8 @@ export async function matchProperties(
   }
   if (criteria.location_id) {
     query = query.eq("location_id", criteria.location_id);
+  } else if (criteria.location_ids?.length) {
+    query = query.in("location_id", criteria.location_ids);
   }
   if (criteria.bedrooms) {
     query = query.gte("bedrooms", criteria.bedrooms);

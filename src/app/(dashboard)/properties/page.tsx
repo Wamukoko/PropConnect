@@ -36,6 +36,12 @@ export default function PropertiesPage() {
   const [filters, setFilters] = useState<Filters>({});
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const search = params.get("search");
+    if (search) setFilters((f) => ({ ...f, search }));
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
       if (v) params.set(k, v);

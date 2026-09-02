@@ -10,10 +10,11 @@ export async function updateSession(request: NextRequest) {
     const mockAuth = request.cookies.get("mock_auth")?.value === "true";
     const isAuthPage = request.nextUrl.pathname.startsWith("/login");
     const isApiWebhook = request.nextUrl.pathname.startsWith("/api/webhook");
+    const isApiAuth = request.nextUrl.pathname.startsWith("/api/auth");
     const isPublicPage = request.nextUrl.pathname.startsWith("/listings") ||
       request.nextUrl.pathname.startsWith("/enquiry");
 
-    if (!mockAuth && !isAuthPage && !isApiWebhook && !isPublicPage) {
+    if (!mockAuth && !isAuthPage && !isApiWebhook && !isApiAuth && !isPublicPage) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);
@@ -55,10 +56,11 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage = request.nextUrl.pathname.startsWith("/login");
   const isApiWebhook = request.nextUrl.pathname.startsWith("/api/webhook");
+  const isApiAuth = request.nextUrl.pathname.startsWith("/api/auth");
   const isPublicPage = request.nextUrl.pathname.startsWith("/listings") ||
     request.nextUrl.pathname.startsWith("/enquiry");
 
-  if (!user && !isAuthPage && !isApiWebhook && !isPublicPage) {
+  if (!user && !isAuthPage && !isApiWebhook && !isApiAuth && !isPublicPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

@@ -3,6 +3,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyWebhookSignature } from "@/lib/whatsapp/webhook";
 import { parseWebhookPayload } from "@/lib/whatsapp/parser";
 import { processInboundMessage, processStatusCallback } from "@/lib/whatsapp/processor";
+import { isFeatureEnabled } from "@/lib/feature-flags";
+import { handleIncomingMessage } from "@/lib/conversations/handler";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || "propconnect_verify";
 const APP_SECRET = process.env.WHATSAPP_APP_SECRET || "";
@@ -78,6 +80,8 @@ export async function POST(request: Request) {
     }
 
     // Process inbound messages
+    const conversationsEnabled = isFeatureEnabled("WHATSAPP_CONVERSATIONS");
+
     for (const msg of parsed.messages) {
       // Resolve or create lead from phone number
       const leadId = await resolveLead(supabase, waAccount.account_id, msg.from);
@@ -97,6 +101,24 @@ export async function POST(request: Request) {
         leadId,
         message: msg,
       });
+
+      // Run the conversational lead flow for text / interactive replies
+      if (conversationsEnabled && leadId) {
+        const body = extractConversationBody(msg);
+        if (body) {
+          try {
+            await handleIncomingMessage({
+              accountId: waAccount.account_id,
+              leadId,
+              whatsappAccountId: waAccount.id,
+              leadPhone: msg.from,
+              messageBody: body,
+            });
+          } catch (error) {
+            console.error("[whatsapp-webhook] Conversation handling error:", error);
+          }
+        }
+      }
     }
 
     // Process status callbacks
@@ -160,4 +182,22 @@ async function resolveLead(
   }
 
   return newLead.id;
+}
+
+function extractConversationBody(msg: {
+  type: string;
+  content: Record<string, any>;
+}): string | null {
+  if (msg.type === "text") {
+    return msg.content?.body || null;
+  }
+
+  if (msg.type === "interactive") {
+    const content = msg.content || {};
+    const replyId = content.list_id || content.button_payload;
+    const replyTitle = content.list_title || content.button_text;
+    return replyId || replyTitle || null;
+  }
+
+  return null;
 }

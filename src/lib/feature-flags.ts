@@ -7,6 +7,7 @@ export const featureFlags = {
   EMAIL: process.env.FEATURE_EMAIL === "true",
   BROADCASTS: process.env.FEATURE_BROADCASTS === "true",
   AI: process.env.FEATURE_AI === "true",
+  WHATSAPP_CONVERSATIONS: process.env.FEATURE_WHATSAPP_CONVERSATIONS === "true",
   MAP_MATCHING: process.env.FEATURE_MAP_MATCHING === "true",
   PUBLIC_LISTINGS: process.env.FEATURE_PUBLIC_LISTINGS !== "false",
   ANALYTICS: process.env.FEATURE_ANALYTICS !== "false",

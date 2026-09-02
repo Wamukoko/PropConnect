@@ -399,6 +399,7 @@ export interface Database {
           wa_message_id: string | null;
           provider_timestamp: string | null;
           correlation_id: string | null;
+          read_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -412,11 +413,13 @@ export interface Database {
           wa_message_id?: string | null;
           provider_timestamp?: string | null;
           correlation_id?: string | null;
+          read_at?: string | null;
           created_at?: string;
         };
         Update: {
           content?: Json;
           correlation_id?: string | null;
+          read_at?: string | null;
         };
       };
       outbound_messages: {
@@ -843,6 +846,136 @@ export interface Database {
           updated_at?: string;
         };
       };
+      saved_searches: {
+        Row: {
+          id: string;
+          account_id: string;
+          agent_id: string | null;
+          name: string;
+          filters: Json;
+          alert_enabled: boolean;
+          alert_frequency: string;
+          last_run_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          agent_id?: string | null;
+          name: string;
+          filters?: Json;
+          alert_enabled?: boolean;
+          alert_frequency?: string;
+          last_run_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          filters?: Json;
+          alert_enabled?: boolean;
+          alert_frequency?: string;
+          last_run_at?: string | null;
+          updated_at?: string;
+        };
+      };
+      agent_tasks: {
+        Row: {
+          id: string;
+          account_id: string;
+          agent_id: string | null;
+          lead_id: string | null;
+          type: string;
+          title: string;
+          description: string | null;
+          notes: string | null;
+          status: string;
+          priority: string;
+          due_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          agent_id?: string | null;
+          lead_id?: string | null;
+          type?: string;
+          title: string;
+          description?: string | null;
+          notes?: string | null;
+          status?: string;
+          priority?: string;
+          due_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          description?: string | null;
+          notes?: string | null;
+          type?: string;
+          status?: string;
+          priority?: string;
+          due_at?: string | null;
+          completed_at?: string | null;
+          updated_at?: string;
+        };
+      };
+      contact_external_ids: {
+        Row: {
+          id: string;
+          account_id: string;
+          contact_id: string;
+          provider: string;
+          external_id: string;
+          raw: Json | null;
+          last_synced_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          contact_id: string;
+          provider?: string;
+          external_id: string;
+          raw?: Json | null;
+          last_synced_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          raw?: Json | null;
+          last_synced_at?: string;
+        };
+      };
+      analytics_events: {
+        Row: {
+          id: string;
+          account_id: string;
+          event_key: string;
+          event_type: string;
+          lead_id: string | null;
+          property_id: string | null;
+          meta: Json;
+          occurred_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          event_key: string;
+          event_type: string;
+          lead_id?: string | null;
+          property_id?: string | null;
+          meta?: Json;
+          occurred_at?: string;
+        };
+        Update: {
+          meta?: Json;
+        };
+      };
       blackout_dates: {
         Row: {
           id: string;
@@ -860,6 +993,186 @@ export interface Database {
         };
         Update: {
           reason?: string | null;
+        };
+      };
+      documents: {
+        Row: {
+          id: string;
+          account_id: string;
+          lead_id: string | null;
+          contact_id: string | null;
+          doc_type: string;
+          storage_path: string;
+          display_name: string;
+          mime_type: string | null;
+          size_bytes: number | null;
+          retention_days: number | null;
+          expires_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          lead_id?: string | null;
+          contact_id?: string | null;
+          doc_type: string;
+          storage_path: string;
+          display_name: string;
+          mime_type?: string | null;
+          size_bytes?: number | null;
+          retention_days?: number | null;
+          expires_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: {
+          expires_at?: string | null;
+          deleted_at?: string | null;
+        };
+      };
+      broadcast_campaigns: {
+        Row: {
+          id: string;
+          account_id: string;
+          whatsapp_account_id: string | null;
+          name: string;
+          status: string;
+          template_name: string | null;
+          language: string;
+          payload: Json;
+          target_filter: Json;
+          total_recipients: number;
+          sent_count: number;
+          failed_count: number;
+          started_at: string | null;
+          completed_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          whatsapp_account_id?: string | null;
+          name: string;
+          status?: string;
+          template_name?: string | null;
+          language?: string;
+          payload?: Json;
+          target_filter?: Json;
+          total_recipients?: number;
+          sent_count?: number;
+          failed_count?: number;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          status?: string;
+          total_recipients?: number;
+          sent_count?: number;
+          failed_count?: number;
+          started_at?: string | null;
+          completed_at?: string | null;
+          updated_at?: string;
+        };
+      };
+      broadcast_recipients: {
+        Row: {
+          id: string;
+          account_id: string;
+          campaign_id: string;
+          lead_id: string;
+          status: string;
+          error: string | null;
+          sent_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          campaign_id: string;
+          lead_id: string;
+          status?: string;
+          error?: string | null;
+          sent_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: string;
+          error?: string | null;
+          sent_at?: string | null;
+        };
+      };
+      ai_jobs: {
+        Row: {
+          id: string;
+          account_id: string;
+          agent_id: string | null;
+          job_type: string;
+          input: Json;
+          output: Json | null;
+          status: string;
+          error: string | null;
+          model: string | null;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          agent_id?: string | null;
+          job_type: string;
+          input?: Json;
+          output?: Json | null;
+          status?: string;
+          error?: string | null;
+          model?: string | null;
+          created_at?: string;
+          completed_at?: string | null;
+        };
+        Update: {
+          output?: Json | null;
+          status?: string;
+          error?: string | null;
+          model?: string | null;
+          completed_at?: string | null;
+        };
+      };
+      catalog_sync_state: {
+        Row: {
+          id: string;
+          account_id: string;
+          whatsapp_account_id: string | null;
+          catalog_id: string | null;
+          status: string;
+          last_synced_at: string | null;
+          error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          account_id: string;
+          whatsapp_account_id?: string | null;
+          catalog_id?: string | null;
+          status?: string;
+          last_synced_at?: string | null;
+          error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          catalog_id?: string | null;
+          status?: string;
+          last_synced_at?: string | null;
+          error?: string | null;
+          updated_at?: string;
         };
       };
     };

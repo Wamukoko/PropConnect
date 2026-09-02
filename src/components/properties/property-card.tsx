@@ -13,7 +13,7 @@ interface Property {
   bedrooms: number | null;
   bathrooms: number | null;
   public_location_text: string | null;
-  property_photos?: { storage_path: string; thumbnail_path: string | null }[];
+  property_photos?: { storage_path: string; thumbnail_path: string | null; signed_url?: string | null; thumbnail_url?: string | null }[];
   locations?: { name: string }[];
 }
 
@@ -44,7 +44,7 @@ export function PropertyCard({ property }: { property: Property }) {
         {photo ? (
           <div
             className="w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${photo.thumbnail_path || photo.storage_path})` }}
+            style={{ backgroundImage: `url(${photo.thumbnail_url || photo.signed_url || photo.thumbnail_path || photo.storage_path})` }}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">

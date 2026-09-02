@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendTextMessage, sendTemplateMessage, type SendResult } from "@/lib/whatsapp/client";
+import { sendTextMessage, sendInteractiveList, sendTemplateMessage, type SendResult } from "@/lib/whatsapp/client";
 
 // ============================================================
 // Failure classification
@@ -214,6 +214,15 @@ export async function sendQueuedMessage(jobId: string): Promise<SendResult> {
   switch (job.job_type) {
     case "text":
       result = await sendTextMessage({ to: lead.phone, text: job.payload.text });
+      break;
+    case "interactive":
+      result = await sendInteractiveList({
+        to: lead.phone,
+        body: job.payload.body,
+        button: job.payload.button,
+        header: job.payload.header,
+        sections: job.payload.sections,
+      });
       break;
     case "template":
       result = await sendTemplateMessage({

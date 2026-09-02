@@ -2,6 +2,25 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import {
+  IconHome,
+  IconInbox,
+  IconMapPin,
+  IconNote,
+  IconPhone,
+  IconSend,
+  IconSparkle,
+  IconClipboard,
+  IconTasks,
+} from "@/components/icons/sidebar-icons";
+import { ScoreDonut } from "@/components/score-donut";
+import {
+  TASK_TYPES,
+  TASK_TYPE_LABELS,
+  PRIORITY_LABELS,
+  STATUS_LABELS,
+} from "@/lib/analytics/task-types";
+import type { TaskType, TaskStatus, TaskPriority } from "@/lib/analytics/task-types";
 
 interface Lead {
   id: string;
@@ -38,6 +57,20 @@ interface TimelineEvent {
   created_at: string;
 }
 
+interface LeadTask {
+  id: string;
+  type: TaskType;
+  title: string;
+  description: string | null;
+  notes: string | null;
+  status: TaskStatus;
+  priority: TaskPriority;
+  due_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  agent?: { id: string; name: string | null };
+}
+
 const STAGES = [
   { value: "new", label: "New", color: "bg-blue-100 text-blue-800" },
   { value: "contacted", label: "Contacted", color: "bg-yellow-100 text-yellow-800" },
@@ -52,15 +85,18 @@ const STAGES = [
   { value: "dormant", label: "Dormant", color: "bg-gray-100 text-gray-600" },
 ];
 
-const EVENT_ICONS: Record<string, string> = {
-  stage_changed: "📋",
-  message_sent: "📤",
-  message_received: "📥",
-  property_viewed: "🏠",
-  note_added: "📝",
-  lead_created: "✨",
-  call_made: "📞",
-  call_received: "📞",
+const EVENT_ICONS: Record<string, () => React.ReactNode> = {
+  stage_changed: () => <IconClipboard size={18} />,
+  message_sent: () => <IconSend size={18} />,
+  message_received: () => <IconInbox size={18} />,
+  property_viewed: () => <IconHome size={18} />,
+  note_added: () => <IconNote size={18} />,
+  lead_created: () => <IconSparkle size={18} />,
+  call_made: () => <IconPhone size={18} />,
+  call_received: () => <IconPhone size={18} />,
+  agent_task_created: () => <IconTasks size={18} />,
+  agent_task_completed: () => <IconTasks size={18} />,
+  agent_task_cancelled: () => <IconTasks size={18} />,
 };
 
 export default function LeadDetailPage() {
@@ -68,8 +104,20 @@ export default function LeadDetailPage() {
   const [lead, setLead] = useState<Lead | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [tasks, setTasks] = useState<LeadTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [converted, setConverted] = useState(false);
+
+  const [newTask, setNewTask] = useState({
+    title: "",
+    type: "lead_follow_up" as TaskType,
+    priority: "medium" as TaskPriority,
+    due_at: "",
+    description: "",
+  });
+  const [taskMutating, setTaskMutating] = useState(false);
 
   const fetchLead = useCallback(async () => {
     try {
@@ -79,6 +127,7 @@ export default function LeadDetailPage() {
       setLead(data.lead);
       setMessages(data.messages || []);
       setTimeline(data.timeline || []);
+      setTasks(data.tasks || []);
     } catch {
       console.error("Failed to fetch lead");
     } finally {
@@ -103,6 +152,43 @@ export default function LeadDetailPage() {
       fetchLead();
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const convertToContact = async () => {
+    if (!lead || converting || converted) return;
+    setConverting(true);
+    try {
+      const [first, ...rest] = (lead.name || lead.whatsapp_name || "").split(" ");
+      const res = await fetch("/api/contacts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          first_name: first || lead.phone,
+          last_name: rest.join(" ") || null,
+          display_name: lead.name || lead.whatsapp_name || lead.phone,
+          phone: lead.phone,
+          email: lead.email || null,
+          contact_type: "lead",
+          source: lead.source || "lead",
+          notes: "Converted from lead",
+        }),
+      });
+      if (!res.ok) throw new Error("Conversion failed");
+      setConverted(true);
+      if (lead.stage !== "converted") {
+        await fetch(`/api/leads/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ stage: "converted" }),
+        });
+        setLead({ ...lead, stage: "converted" });
+        fetchLead();
+      }
+    } catch {
+      console.error("Failed to convert");
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -132,6 +218,20 @@ export default function LeadDetailPage() {
         )}
       </div>
 
+      <div className="flex items-center gap-2">
+        <button
+          onClick={convertToContact}
+          disabled={converting || converted || lead.stage === "converted"}
+          className="rounded-lg bg-[var(--color-navy)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {converted || lead.stage === "converted"
+            ? "Converted to Contact"
+            : converting
+              ? "Converting..."
+              : "Convert to Contact"}
+        </button>
+      </div>
+
       {/* Stage Pipeline */}
       <div className="rounded-lg border border-gray-200 p-4">
         <h2 className="mb-3 text-sm font-medium text-gray-700">Pipeline</h2>
@@ -143,7 +243,7 @@ export default function LeadDetailPage() {
               disabled={updating}
               className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
                 stage.value === lead.stage
-                  ? "bg-[var(--color-primary)] text-white"
+                  ? "bg-[var(--color-navy)] text-white"
                   : idx <= currentStageIndex
                     ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     : "bg-gray-100 text-gray-400 hover:bg-gray-200"
@@ -179,7 +279,10 @@ export default function LeadDetailPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">Score</dt>
-                <dd className="font-medium">{lead.lead_score}/100</dd>
+                <dd className="flex items-center gap-2">
+                  <ScoreDonut score={lead.lead_score} size={28} />
+                  <span className="text-xs text-gray-500">/100</span>
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-500">Budget</dt>
@@ -215,6 +318,174 @@ export default function LeadDetailPage() {
 
         {/* Timeline + Messages */}
         <div className="lg:col-span-2 space-y-4">
+          {/* Tasks / Follow-ups */}
+          <div className="rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-medium text-gray-700">
+                Tasks &amp; Follow-ups ({tasks.length})
+              </h2>
+            </div>
+
+            <div className="mb-3 space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={newTask.type}
+                  onChange={(e) => setNewTask({ ...newTask, type: e.target.value as TaskType })}
+                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs"
+                >
+                  {TASK_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {TASK_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={newTask.priority}
+                  onChange={(e) =>
+                    setNewTask({ ...newTask, priority: e.target.value as TaskPriority })
+                  }
+                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs"
+                >
+                  {(["low", "medium", "high"] as TaskPriority[]).map((p) => (
+                    <option key={p} value={p}>
+                      {PRIORITY_LABELS[p]}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="datetime-local"
+                  value={newTask.due_at}
+                  onChange={(e) => setNewTask({ ...newTask, due_at: e.target.value })}
+                  className="rounded-md border border-gray-200 px-2 py-1.5 text-xs"
+                />
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={newTask.title}
+                  onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  placeholder="New follow-up task title"
+                  className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm"
+                />
+                <input
+                  value={newTask.description}
+                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  placeholder="Notes (optional)"
+                  className="hidden w-1/3 rounded-md border border-gray-200 px-2 py-1.5 text-sm sm:block"
+                />
+                <button
+                  onClick={async () => {
+                    const title = newTask.title.trim();
+                    if (!title || taskMutating || !lead) return;
+                    setTaskMutating(true);
+                    try {
+                      const res = await fetch("/api/tasks", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          lead_id: lead.id,
+                          type: newTask.type,
+                          title,
+                          description: newTask.description.trim() || null,
+                          priority: newTask.priority,
+                          due_at: newTask.due_at || null,
+                        }),
+                      });
+                      if (res.ok) {
+                        setNewTask({
+                          title: "",
+                          description: "",
+                          type: "lead_follow_up",
+                          priority: "medium",
+                          due_at: "",
+                        });
+                        fetchLead();
+                      }
+                    } finally {
+                      setTaskMutating(false);
+                    }
+                  }}
+                  disabled={taskMutating || !newTask.title.trim()}
+                  className="flex-none rounded-md bg-[var(--color-navy)] px-3 py-1.5 text-xs text-white disabled:opacity-50"
+                >
+                  {taskMutating ? "Adding..." : "Add Task"}
+                </button>
+              </div>
+            </div>
+
+            {tasks.length === 0 ? (
+              <p className="text-sm text-gray-500">No tasks or follow-ups yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`flex items-start justify-between gap-3 rounded-lg border border-gray-100 p-3 ${
+                      task.status === "completed" || task.status === "cancelled"
+                        ? "opacity-60"
+                        : ""
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-gray-800">{task.title}</span>
+                        <span className="text-[10px] uppercase tracking-wide text-gray-400">
+                          {TASK_TYPE_LABELS[task.type]}
+                        </span>
+                      </div>
+                      {task.description && (
+                        <p className="mt-0.5 text-xs text-gray-500">{task.description}</p>
+                      )}
+                      {task.due_at && (
+                        <p className="mt-0.5 text-xs text-gray-400">
+                          Due {new Date(task.due_at).toLocaleString()}
+                        </p>
+                      )}
+                      <p className="mt-0.5 text-[11px] text-gray-400">
+                        {STATUS_LABELS[task.status]} · {PRIORITY_LABELS[task.priority]} ·{" "}
+                        {task.agent?.name ?? "Unassigned"}
+                      </p>
+                    </div>
+                    <div className="flex flex-none gap-1.5">
+                      {task.status === "pending" && (
+                        <button
+                          onClick={async () => {
+                            await fetch(`/api/tasks/${task.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ status: "in_progress" }),
+                            });
+                            fetchLead();
+                          }}
+                          className="rounded-md border border-gray-300 px-2 py-1 text-[11px] hover:bg-gray-50"
+                        >
+                          Start
+                        </button>
+                      )}
+                      {task.status === "in_progress" && (
+                        <button
+                          onClick={async () => {
+                            await fetch(`/api/tasks/${task.id}`, {
+                              method: "PATCH",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ status: "completed" }),
+                            });
+                            fetchLead();
+                          }}
+                          className="rounded-md bg-emerald-600 px-2 py-1 text-[11px] text-white"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {task.status === "completed" && (
+                        <span className="text-[11px] font-medium text-emerald-600">Done</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Messages */}
           <div className="rounded-lg border border-gray-200 p-4">
             <h2 className="mb-3 text-sm font-medium text-gray-700">Messages ({messages.length})</h2>
@@ -232,8 +503,12 @@ export default function LeadDetailPage() {
                     }`}
                   >
                     <p>{msg.content?.body || msg.content?.text || JSON.stringify(msg.content)}</p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      {msg.direction === "inbound" ? "📥" : "📤"}{" "}
+                    <p className="mt-1 text-xs text-gray-500 flex items-center gap-1.5">
+                      {msg.direction === "inbound" ? (
+                        <IconInbox size={13} />
+                      ) : (
+                        <IconSend size={13} />
+                      )}{" "}
                       {new Date(msg.created_at).toLocaleString()}
                     </p>
                   </div>
@@ -251,9 +526,13 @@ export default function LeadDetailPage() {
               <div className="space-y-3">
                 {timeline.map((event) => (
                   <div key={event.id} className="flex gap-3">
-                    <span className="text-lg">{EVENT_ICONS[event.event_type] || "📌"}</span>
+                    <span className="text-gray-400 mt-0.5">
+                      {EVENT_ICONS[event.event_type]
+                        ? EVENT_ICONS[event.event_type]()
+                        : <IconMapPin size={18} />}
+                    </span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{event.event_type.replace(/_/g, " ")}</p>
+                      <p className="text-sm font-medium">{(event.event_type || "").replace(/_/g, " ")}</p>
                       {event.metadata?.note && (
                         <p className="text-sm text-gray-600">{event.metadata.note}</p>
                       )}

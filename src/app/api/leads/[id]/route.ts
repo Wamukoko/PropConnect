@@ -59,11 +59,28 @@ export async function GET(
     .order("created_at", { ascending: false })
     .limit(5);
 
+  // Fetch tasks / follow-ups for this lead
+  const { data: tasks } = await supabase
+    .from("agent_tasks")
+    .select("*, agent:agents(id, name)")
+    .eq("lead_id", id)
+    .order("due_at", { ascending: true, nullsFirst: false })
+    .limit(50);
+
+  // Mark inbound messages as read now that the agent opened the conversation
+  await supabase
+    .from("messages" as any)
+    .update({ read_at: new Date().toISOString() })
+    .eq("lead_id", id)
+    .eq("direction", "inbound")
+    .is("read_at", null);
+
   return NextResponse.json({
     lead: data,
     messages: messages || [],
     timeline: timeline || [],
     sessions: sessions || [],
+    tasks: tasks || [],
   });
 }
 

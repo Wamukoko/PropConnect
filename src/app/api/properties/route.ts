@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { propertyFilterSchema } from "@/lib/validators/property";
+import { enrichPhotosWithSignedUrls } from "@/lib/properties";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -31,16 +32,15 @@ export async function GET(request: Request) {
     .select(
       `
       *,
-      property_photos!inner (
-        id, storage_path, thumbnail_path, alt_text, sort_order
+      property_photos (
+        id, storage_path, thumbnail_path, alt_text, sort_order, deleted_at
       ),
-      locations!inner (
+      locations (
         id, name, slug, location_type
       )
       `,
       { count: "exact" }
-    )
-    .is("property_photos.deleted_at", null);
+    );
 
   if (filters.property_type) {
     query = query.eq("property_type", filters.property_type);
@@ -78,8 +78,17 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const properties = (data || []).map((p: any) => ({
+    ...p,
+    property_photos: (p.property_photos || []).filter(
+      (photo: any) => photo.deleted_at == null
+    ),
+  }));
+
+  const enriched = await enrichPhotosWithSignedUrls(properties, supabase);
+
   return NextResponse.json({
-    properties: data,
+    properties: enriched,
     pagination: {
       page,
       limit,

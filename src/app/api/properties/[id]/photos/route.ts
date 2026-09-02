@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { validatePhotoUpload } from "@/lib/properties/photo-processing";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
@@ -37,18 +38,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json(
-      { error: `Invalid file type. Allowed: ${ALLOWED_TYPES.join(", ")}` },
-      { status: 400 }
-    );
-  }
-
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json(
-      { error: `File too large. Maximum: ${MAX_SIZE / 1024 / 1024}MB` },
-      { status: 400 }
-    );
+  const validation = validatePhotoUpload({ type: file.type, size: file.size });
+  if (!validation.valid) {
+    return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
   const ext = file.name.split(".").pop() || "jpg";

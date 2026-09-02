@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const propertyTypes = [
@@ -13,6 +13,39 @@ const listingTypes = ["sale", "rent", "lease"];
 export default function NewPropertyPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [pendingPhotos, setPendingPhotos] = useState<{ file: File; preview: string }[]>([]);
+  const previewUrls = useRef<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(
+    () => () => {
+      previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    },
+    []
+  );
+
+  const addFiles = (files: FileList | File[] | null) => {
+    if (!files) return;
+    const next = Array.from(files).map((file) => {
+      const preview = URL.createObjectURL(file);
+      previewUrls.current.push(preview);
+      return { file, preview };
+    });
+    setPendingPhotos((prev) => [...prev, ...next]);
+  };
+
+  const removePhoto = (index: number) => {
+    setPendingPhotos((prev) => {
+      const target = prev[index];
+      if (target) {
+        URL.revokeObjectURL(target.preview);
+        previewUrls.current = previewUrls.current.filter((url) => url !== target.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -51,6 +84,26 @@ export default function NewPropertyPage() {
 
       if (res.ok) {
         const property = await res.json();
+        for (const { file } of pendingPhotos) {
+          const uploadBody = new FormData();
+          uploadBody.append("property_id", property.id);
+          uploadBody.append("file", file);
+
+          try {
+            const uploadRes = await fetch(`/api/properties/${property.id}/photos`, {
+              method: "POST",
+              body: uploadBody,
+            });
+            if (!uploadRes.ok) {
+              const err = await uploadRes.json().catch(() => ({}));
+              alert(err.error || "One or more photos failed to upload");
+              break;
+            }
+          } catch {
+            alert("One or more photos failed to upload");
+            break;
+          }
+        }
         router.push(`/properties/${property.id}`);
       } else {
         const err = await res.json();
@@ -214,6 +267,72 @@ export default function NewPropertyPage() {
                 Furnished
               </label>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg border border-gray-100 p-6 space-y-4">
+          <h2 className="font-semibold" style={{ color: "var(--color-primary)" }}>
+            Photos
+          </h2>
+
+          {pendingPhotos.length > 0 && (
+            <div className="grid grid-cols-3 gap-3">
+              {pendingPhotos.map((photo, index) => (
+                <div
+                  key={index}
+                  className="relative aspect-square rounded-md overflow-hidden border border-gray-200"
+                >
+                  <img
+                    src={photo.preview}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    aria-label="Remove photo"
+                    onClick={() => removePhoto(index)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 text-xs text-gray-700 shadow hover:bg-white"
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
+              dragOver ? "border-accent bg-accent/5" : "border-gray-200"
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOver(false);
+              addFiles(e.dataTransfer.files);
+            }}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+            <p className="text-sm text-gray-500 mb-2">
+              Drag photos here, or{" "}
+              <span className="underline" style={{ color: "var(--color-secondary)" }}>
+                browse
+              </span>
+            </p>
+            <p className="text-xs text-gray-400">
+              JPEG, PNG, or WebP. Uploaded right after the property is created.
+            </p>
           </div>
         </div>
 

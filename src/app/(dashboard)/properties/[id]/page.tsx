@@ -23,7 +23,7 @@ interface Property {
   public_location_text: string | null;
   availability_date: string | null;
   created_at: string;
-  property_photos?: { id: string; storage_path: string; alt_text: string | null; sort_order: number }[];
+  property_photos?: { id: string; storage_path: string; alt_text: string | null; sort_order: number; signed_url?: string | null }[];
   locations?: { name: string; location_type: string }[];
 }
 
@@ -32,6 +32,7 @@ export default function PropertyDetailPage() {
   const router = useRouter();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetch(`/api/properties/${params.id}`)
@@ -65,6 +66,31 @@ export default function PropertyDetailPage() {
           >
             Edit
           </button>
+          <button
+            onClick={async () => {
+              if (!window.confirm(`Delete "${property.title}"? This archives the listing.`)) return;
+              setDeleting(true);
+              try {
+                const res = await fetch(`/api/properties/${property.id}`, {
+                  method: "DELETE",
+                });
+                if (res.ok) {
+                  router.push("/properties");
+                } else {
+                  const err = await res.json().catch(() => ({}));
+                  alert(err.error || "Failed to delete property");
+                  setDeleting(false);
+                }
+              } catch {
+                alert("Failed to delete property");
+                setDeleting(false);
+              }
+            }}
+            disabled={deleting}
+            className="px-3 py-1.5 text-sm border border-red-200 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50"
+          >
+            {deleting ? "Deleting..." : "Delete"}
+          </button>
         </div>
       </div>
 
@@ -81,7 +107,7 @@ export default function PropertyDetailPage() {
                   <div
                     key={photo.id}
                     className="aspect-square bg-gray-100 rounded-md bg-cover bg-center"
-                    style={{ backgroundImage: `url(${photo.storage_path})` }}
+                    style={{ backgroundImage: `url(${photo.signed_url || photo.storage_path})` }}
                   />
                 ))}
               </div>

@@ -57,6 +57,23 @@ export async function processInboundMessage(
       .from("leads")
       .update({ last_contacted_at: new Date().toISOString() })
       .eq("id", params.leadId);
+
+    // Emit timeline event for the inbound message
+    await supabase.from("lead_timeline_events").insert({
+      account_id: params.accountId,
+      lead_id: params.leadId,
+      actor_type: "customer",
+      actor_id: null,
+      event_type: "message_received",
+      metadata: {
+        message_type: params.message.type,
+        wa_message_id: params.message.waMessageId,
+        content_summary:
+          params.message.type === "text"
+            ? (params.message.content.body || "").slice(0, 100)
+            : params.message.type,
+      },
+    });
   }
 }
 
