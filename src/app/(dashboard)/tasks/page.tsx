@@ -632,117 +632,121 @@ function TaskRowCard({
 
   return (
     <div
-      className={`flex items-start gap-4 p-4 transition-colors hover:bg-[var(--color-off-white)] ${
+      className={`p-4 transition-colors hover:bg-[var(--color-off-white)] ${
         divider ? "border-t border-gray-100" : ""
       } ${completed || cancelled ? "opacity-60" : ""}`}
     >
-      {!completed && !cancelled && (
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggleSelect}
-          aria-label="Select task"
-          className="mt-1 flex-none accent-[var(--color-secondary)]"
-        />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-medium text-gray-900">{task.title}</span>
-          <span className={`text-xs rounded-full px-2 py-0.5 ${PRIORITY_STYLES[task.priority]}`}>
-            {PRIORITY_LABELS[task.priority]}
-          </span>
-          <span className={`text-xs rounded-full px-2 py-0.5 ${STATUS_STYLES[task.status]}`}>
-            {STATUS_LABELS[task.status]}
-          </span>
-          <span className="text-xs rounded-full border border-gray-200 px-2 py-0.5 text-gray-500">
-            {TASK_TYPE_LABELS[task.type] ?? task.type}
-          </span>
-        </div>
-
-        {task.description && (
-          <p className="mt-1 text-sm text-gray-600">{task.description}</p>
+      <div className="flex items-start gap-3 sm:gap-4">
+        {!completed && !cancelled && (
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onToggleSelect}
+            aria-label="Select task"
+            className="mt-1 flex-none accent-[var(--color-secondary)]"
+          />
         )}
-        {task.notes && (
-          <p className="mt-1 text-xs text-gray-400 italic">Notes: {task.notes}</p>
-        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-medium text-gray-900">{task.title}</span>
+            <span className={`text-xs rounded-full px-2 py-0.5 ${PRIORITY_STYLES[task.priority]}`}>
+              {PRIORITY_LABELS[task.priority]}
+            </span>
+            <span className={`text-xs rounded-full px-2 py-0.5 ${STATUS_STYLES[task.status]}`}>
+              {STATUS_LABELS[task.status]}
+            </span>
+            <span className="text-xs rounded-full border border-gray-200 px-2 py-0.5 text-gray-500">
+              {TASK_TYPE_LABELS[task.type] ?? task.type}
+            </span>
+          </div>
 
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-          {task.lead?.id ? (
-            <Link
-              href={`/leads/${task.lead.id}`}
-              className="inline-flex items-center gap-1 font-medium text-[var(--color-primary)] hover:underline"
-            >
-              {leadName || "Lead"}
-              {task.lead.phone && (
-                <span className="inline-flex items-center gap-1 text-gray-400">
-                  <IconPhone size={11} />
-                  {task.lead.phone}
-                </span>
-              )}
-            </Link>
-          ) : (
-            <span className="text-gray-400">Unlinked task</span>
+          {task.description && (
+            <p className="mt-1 text-sm text-gray-600 break-words">{task.description}</p>
           )}
-          <span>·</span>
-          <span>
-            {task.agent?.name ? `Assigned: ${task.agent.name}` : "Unassigned"}
-          </span>
-          {task.due_at && (
-            <>
-              <span>·</span>
-              <span className={dueStatusClass(task)}>{formatDue(task.due_at)}</span>
-            </>
+          {task.notes && (
+            <p className="mt-1 text-xs text-gray-400 italic break-words">Notes: {task.notes}</p>
           )}
+
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+            {task.lead?.id ? (
+              <Link
+                href={`/leads/${task.lead.id}`}
+                className="inline-flex items-center gap-1 font-medium text-[var(--color-primary)] hover:underline"
+              >
+                {leadName || "Lead"}
+                {task.lead.phone && (
+                  <span className="inline-flex items-center gap-1 text-gray-400">
+                    <IconPhone size={11} />
+                    {task.lead.phone}
+                  </span>
+                )}
+              </Link>
+            ) : (
+              <span className="text-gray-400">Unlinked task</span>
+            )}
+            <span>·</span>
+            <span>
+              {task.agent?.name ? `Assigned: ${task.agent.name}` : "Unassigned"}
+            </span>
+            {task.due_at && (
+              <>
+                <span>·</span>
+                <span className={dueStatusClass(task)}>{formatDue(task.due_at)}</span>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="flex flex-none items-center gap-2">
-        {!completed && !cancelled && (
-          <>
+      <div className="mt-3 flex flex-wrap items-center gap-2 sm:mt-0 sm:pl-0">
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          {!completed && !cancelled && (
+            <>
+              <button
+                onClick={() =>
+                  onStatus(task.status === "in_progress" ? "pending" : "in_progress")
+                }
+                className="rounded-md border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50"
+              >
+                {task.status === "in_progress" ? "Pause" : "Start"}
+              </button>
+              <button
+                onClick={() => onStatus("completed")}
+                className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:opacity-90"
+              >
+                Complete
+              </button>
+              <button
+                onClick={() => onStatus("cancelled")}
+                className="rounded-md border border-gray-200 px-3 py-1 text-xs text-gray-500 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+          {completed && (
             <button
-              onClick={() =>
-                onStatus(task.status === "in_progress" ? "pending" : "in_progress")
-              }
-              className="rounded-md border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50"
+              onClick={() => onStatus("pending")}
+              className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-500 hover:bg-gray-50"
             >
-              {task.status === "in_progress" ? "Pause" : "Start"}
+              Reopen
             </button>
-            <button
-              onClick={() => onStatus("completed")}
-              className="rounded-md bg-emerald-600 px-3 py-1 text-xs text-white hover:opacity-90"
-            >
-              Complete
-            </button>
-            <button
-              onClick={() => onStatus("cancelled")}
-              className="rounded-md border border-gray-200 px-3 py-1 text-xs text-gray-500 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-          </>
-        )}
-        {completed && (
+          )}
           <button
-            onClick={() => onStatus("pending")}
-            className="rounded-md border border-gray-300 px-3 py-1 text-xs text-gray-500 hover:bg-gray-50"
+            onClick={onToggleEdit}
+            className="rounded-md border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50"
           >
-            Reopen
+            Edit
           </button>
-        )}
-        <button
-          onClick={onToggleEdit}
-          className="rounded-md border border-gray-300 px-3 py-1 text-xs hover:bg-gray-50"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => {
-            if (window.confirm("Delete this task?")) onDelete();
-          }}
-          className="rounded-md border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
-        >
-          Delete
-        </button>
+          <button
+            onClick={() => {
+              if (window.confirm("Delete this task?")) onDelete();
+            }}
+            className="rounded-md border border-red-200 px-3 py-1 text-xs text-red-600 hover:bg-red-50"
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   );

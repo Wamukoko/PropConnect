@@ -145,8 +145,8 @@ export function DashboardSidebar({
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
       >
-        <div className="flex h-screen flex-col">
-          <div className="flex h-16 flex-none items-center justify-between border-b border-gray-100 px-4">
+          <div className="flex h-full flex-col">
+          <div className="flex h-16 flex-none items-center justify-between border-b border-gray-100 px-4 pt-[env(safe-area-inset-top)]">
             <span className="text-base font-bold tracking-tight">
               <span style={{ color: "var(--color-secondary)" }}>Prop</span>
               <span className="text-[var(--color-navy-deep)]">Connect</span>

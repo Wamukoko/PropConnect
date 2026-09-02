@@ -132,7 +132,7 @@ export function DashboardNav({
 
   return (
     <header
-      className="border-b"
+      className="sticky top-0 z-30 border-b pt-[env(safe-area-inset-top)]"
       style={{
         backgroundColor: "var(--color-navy-deep)",
         borderColor: "rgba(255, 255, 255, 0.06)",
