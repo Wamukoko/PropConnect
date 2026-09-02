@@ -9,6 +9,7 @@ import {
   IconChevronDown,
   IconLogout,
   IconMapPin,
+  IconMenu,
   IconMoon,
   IconPlus,
   IconSearch,
@@ -16,6 +17,7 @@ import {
   IconSun,
   IconTasks,
   IconViewings,
+  IconX,
 } from "@/components/icons/sidebar-icons";
 
 interface ViewingRequest {
@@ -34,11 +36,18 @@ interface PendingTask {
 
 type OpenMenu = "bell" | "user" | null;
 
-export function DashboardNav({ user }: { user: { email?: string } }) {
+export function DashboardNav({
+  user,
+  onMenuClick,
+}: {
+  user: { email?: string };
+  onMenuClick?: () => void;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState<OpenMenu>(null);
   const [query, setQuery] = useState("");
+  const [mobileSearch, setMobileSearch] = useState(false);
   const [dark, setDark] = useState(false);
   const [notifs, setNotifs] = useState<{ requests: ViewingRequest[]; tasks: PendingTask[] }>({
     requests: [],
@@ -122,15 +131,25 @@ export function DashboardNav({ user }: { user: { email?: string } }) {
   const badgeTotal = notifs.requests.length + notifs.tasks.length;
 
   return (
-    <nav
-      className="h-16 border-b px-5 flex items-center justify-between gap-4"
+    <header
+      className="border-b"
       style={{
         backgroundColor: "var(--color-navy-deep)",
         borderColor: "rgba(255, 255, 255, 0.06)",
       }}
     >
+      <div className="h-16 px-3 sm:px-5 flex items-center justify-between gap-2 sm:gap-4">
       {/* Brand + current section */}
       <div className="flex min-w-0 items-center gap-3">
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            aria-label="Open menu"
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
+          >
+            <IconMenu size={20} />
+          </button>
+        )}
         <Link href="/" className="flex flex-none items-center gap-2.5">
           <span
             className="h-3 w-3 rounded-full"
@@ -181,6 +200,15 @@ export function DashboardNav({ user }: { user: { email?: string } }) {
           New property
         </Link>
 
+        {/* Mobile search toggle */}
+        <button
+          onClick={() => setMobileSearch((v) => !v)}
+          aria-label="Search"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-white/70 transition-colors hover:bg-white/10 hover:text-white md:hidden"
+        >
+          <IconSearch size={18} />
+        </button>
+
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -230,7 +258,40 @@ export function DashboardNav({ user }: { user: { email?: string } }) {
           {open === "user" && <UserMenu email={user.email} onSignOut={handleSignOut} />}
         </div>
       </div>
-    </nav>
+      </div>
+
+      {/* Mobile search row */}
+      {mobileSearch && (
+        <div className="border-t border-white/10 px-3 pb-3 sm:px-5 md:hidden">
+          <form
+            onSubmit={(e) => {
+              handleSearch(e);
+              setMobileSearch(false);
+            }}
+            className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-3 py-2 focus-within:border-[var(--color-secondary)]"
+          >
+            <span className="text-white/40">
+              <IconSearch size={16} />
+            </span>
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search properties…"
+              className="w-full bg-transparent text-sm text-white placeholder-white/40 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => setMobileSearch(false)}
+              aria-label="Close search"
+              className="text-white/40 transition-colors hover:text-white"
+            >
+              <IconX size={16} />
+            </button>
+          </form>
+        </div>
+      )}
+    </header>
   );
 }
 
@@ -242,7 +303,7 @@ function NotificationPanel({
   const isEmpty = notifs.requests.length === 0 && notifs.tasks.length === 0;
 
   return (
-    <div className="absolute right-0 z-50 mt-2 w-80 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl shadow-black/10">
+    <div className="absolute right-0 z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl shadow-black/10">
       <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
         <p className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
           Notifications
