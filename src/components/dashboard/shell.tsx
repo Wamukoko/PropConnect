@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { DashboardNav } from "@/components/dashboard/nav";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { DashboardFooter } from "@/components/dashboard/footer";
+import { PwaInstallPrompt } from "@/components/pwa/install-prompt";
 
 export function DashboardShell({
   user,
@@ -31,6 +32,7 @@ export function DashboardShell({
         <main className="flex-1 min-w-0 p-4 sm:p-6">{children}</main>
       </div>
       <DashboardFooter />
+      <PwaInstallPrompt />
     </div>
   );
 }
